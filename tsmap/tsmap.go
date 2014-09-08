@@ -12,7 +12,7 @@ import (
 
 /* Map implements a threadsafe map. */
 type Map struct {
-	sync.RWMutex
+	l sync.RWMutex
 	m map[string]interface{}
 }
 
@@ -26,8 +26,8 @@ func New() *Map {
 
 /* Get returns the value pointed to by k */
 func (m *Map) Get(k string) (interface{}, bool) {
-	m.RLock()
-	defer m.RUnlock()
+	m.l.RLock()
+	defer m.l.RUnlock()
 	v, ok := m.m[k]
 	return v, ok
 
@@ -35,16 +35,16 @@ func (m *Map) Get(k string) (interface{}, bool) {
 
 /* Put puts value v at key k in the Map. */
 func (m *Map) Put(k string, v interface{}) {
-	m.Lock()
-	defer m.Unlock()
+	m.l.Lock()
+	defer m.l.Unlock()
 	m.m[k] = v
 }
 
 /* PutUnique puts value v at key k only if k does not exist already, and
 returns whether the put was successful or not. */
 func (m *Map) PutUnique(k string, v interface{}) bool {
-	m.Lock()
-	defer m.Unlock()
+	m.l.Lock()
+	defer m.l.Unlock()
 	if _, ok := m.m[k]; ok {
 		return false
 	}
@@ -54,9 +54,25 @@ func (m *Map) PutUnique(k string, v interface{}) bool {
 
 /* Delete the key/value pair with key k. */
 func (m *Map) Delete(k string) {
-	m.Lock()
-	defer m.Unlock()
+	m.l.Lock()
+	defer m.l.Unlock()
 	delete(m.m, k)
 }
+
+/* Get the keys */
+func (m *Map) Keys() []string {
+        m.l.RLock()
+        defer m.l.RUnlock()
+        /* Slice to hold keys */
+        keys := make([]string, len(m.m))
+        i := 0
+        /* Get some keys */
+        for k := range m.m {
+                keys[i] = k
+                i++
+        }
+        return keys
+}
+
 
 /* TODO: Function to apply function to value */
